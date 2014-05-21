@@ -1,45 +1,25 @@
 <?php
 /*
-Plugin Name: S3 Streams 
-Plugin URI: 
-Description: 
+Plugin Name: wpS3StreamWrapper 
+Plugin URI: https://github.com/foglerek/wpS3StreamWrapper
+Description: Enables use of s3:// stream, allowing you to set a AWS S3 bucket as the upload_dir and upload_dir_url.
 Version: 0.1
-Author: Adam Backstrom
-Author URI: http://sixohthree.com/
-License: GPL2
+Author: Alexander Wesolowski
+Author URI: http://github.com/foglerek
+License: MIT
 */
 
-if( !function_exists('add_filter') ) {
-	function add_filter() {}
+if (!class_exists('WpS3StreamWrapper')) {
+	require_once( plugin_dir_path(__FILE__) . 'lib/WpS3StreamWrapper.php' );
+
+	$WpS3StreamWrapper = new WpS3StreamWrapper();
 }
 
-ini_set('include_path', ini_get('include_path') . ':' . __DIR__);
-
-require_once 'Zend/Service/Amazon/S3.php';
-
-call_user_func(function() {
-	$s3 = new Zend_Service_Amazon_S3('PRIVATE', 'PRIVATE');
-	$s3->registerStreamWrapper('s3');
-});
-
-define('S3_BUCKET', 'wps3');
-
-function s3_upload_path( $path ) {
-	return 's3://wps3/wp-content/uploads';
+if (is_admin()) {
+	$WpS3StreamWrapper->setupAdminPage();
 }
-add_filter( 'pre_option_upload_path', 's3_upload_path' );
 
-function s3_upload_url_path( $path ) {
-	return 'http://s3.amazonaws.com/wps3/wp-content/uploads';
-}
-add_filter( 'pre_option_upload_url_path', 's3_upload_url_path' );
-
-function s3_upload_dir( $uploads ) {
-	$uploads['path'] = substr( $uploads['path'], strlen(ABSPATH) );
-	$uploads['basedir'] = substr( $uploads['basedir'], strlen(ABSPATH) );
-
-	return $uploads;
-}
-add_filter( 'upload_dir', 's3_upload_dir' );
+register_activation_hook(__FILE__, array($WpS3StreamWrapper, 'activate'));
+register_deactivation_hook(__FILE__, array($WpS3StreamWrapper, 'deactivate'));
 
 ?>
